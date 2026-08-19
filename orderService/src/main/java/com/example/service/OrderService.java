@@ -1,8 +1,8 @@
 package com.example.service;
 
-import com.example.client.PaymentClient;
 import com.example.client.UserClient;
 import com.example.dto.OrderResponse;
+import com.example.dto.UserResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,7 +11,6 @@ import java.util.List;
 public class OrderService {
 
     private final UserClient userClient;
-    private final PaymentClient paymentClient;
 
     private final List<OrderResponse> orders = List.of(
             new OrderResponse(100L, 1L),
@@ -19,12 +18,8 @@ public class OrderService {
             new OrderResponse(102L, 3L)
     );
 
-    public OrderService(
-            UserClient userClient,
-            PaymentClient paymentClient
-    ) {
+    public OrderService(UserClient userClient) {
         this.userClient = userClient;
-        this.paymentClient = paymentClient;
     }
 
     public OrderResponse getOrderById(Long orderId) {
@@ -39,14 +34,9 @@ public class OrderService {
         }
 
         // Call User Service
-        String user = userClient.getUser(order.getUserId());
+        UserResponse user = userClient.getUser(order.getUserId());
 
-        System.out.println("User response: " + user);
-
-        // Call Payment Service
-        String payment = paymentClient.getPayment(orderId);
-
-        System.out.println("Payment response: " + payment);
+        System.out.println("User response: " + user.getName());
 
         return order;
     }

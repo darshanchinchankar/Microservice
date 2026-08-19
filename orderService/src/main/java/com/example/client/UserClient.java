@@ -1,6 +1,8 @@
 package com.example.client;
 
+import com.example.dto.UserResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -9,33 +11,39 @@ public class UserClient {
 
     private final RestClient restClient;
 
-    public UserClient(RestClient.Builder builder) {
-        this.restClient = builder.build();
+    public UserClient(
+            RestClient.Builder builder,
+            @Value("${user.service.base-url}") String userServiceBaseUrl
+    ) {
+        this.restClient = builder
+                .baseUrl(userServiceBaseUrl)
+                .build();
     }
 
     @CircuitBreaker(
             name = "userService",
             fallbackMethod = "userFallback"
     )
-    public String getUser(Long userId) {
+    public UserResponse getUser(Long userId) {
 
         return restClient.get()
-                .uri("http://localhost:8081/api/users/" + userId)
+                .uri("/api/users/{id}", userId)
                 .retrieve()
-                .body(String.class);
+                .body(UserResponse.class);
     }
 
-    public String userFallback(
-            Long userId,
-            Throwable throwable
-    ) {
+    public UserResponse userFallback(Long userId, Throwable throwable) {
 
-        System.out.println(
-                "User fallback triggered: "
-                        + throwable.getMessage()
+        System.out.println("=================================");
+        System.out.println("USER SERVICE IS DOWN");
+        System.out.println("CIRCUIT BREAKER FALLBACK TRIGGERED");
+        System.out.println("Reason: " + throwable.getMessage());
+        System.out.println("=================================");
+
+        return new UserResponse(
+                userId,
+                "Unknown",
+                "User Service unavailable"
         );
-
-        return "User Service is currently unavailable for user: "
-                + userId;
     }
 }
